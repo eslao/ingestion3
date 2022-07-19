@@ -97,28 +97,33 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       .map(document => dplaMap.map(document, extractorClass))
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
-    // Get a list of originalIds that appear in more than one record
-    val duplicateOriginalIds: Broadcast[Array[String]] =
-      spark.sparkContext.broadcast(
-        mappingResults
-          .map(_.originalId)
-          .countByValue  // action, forces evaluation
-          .collect{ case(origId, count) if count > 1 && origId != "" => origId }
-          .toArray
-      )
 
 
-    // Update messages to include duplicate originalId
     val enforceDuplidateIds = getExtractorClass(shortName).getMapping.enforceDuplicateIds
 
-    val updatedResults: RDD[OreAggregation] = mappingResults.map(oreAgg => {
-      oreAgg.copy(messages =
-        if (duplicateOriginalIds.value.contains(oreAgg.originalId))
-          duplicateOriginalId(oreAgg.originalId, enforceDuplidateIds) +: oreAgg.messages // prepend is faster that append on seq
-        else
-          oreAgg.messages
-      )
-    })
+    val updatedResults: RDD[OreAggregation] = if (enforceDuplidateIds) {
+      // Get a list of originalIds that appear in more than one record
+      val duplicateOriginalIds: Broadcast[Array[String]] =
+        spark.sparkContext.broadcast(
+          mappingResults
+            .map(_.originalId)
+            .countByValue  // action, forces evaluation
+            .collect{ case(origId, count) if count > 1 && origId != "" => origId }
+            .toArray
+        )
+
+      // Update messages to include duplicate originalId
+      mappingResults.map(oreAgg => {
+        oreAgg.copy(messages =
+          if (duplicateOriginalIds.value.contains(oreAgg.originalId))
+            duplicateOriginalId(oreAgg.originalId, enforceDuplidateIds) +: oreAgg.messages // prepend is faster that append on seq
+          else
+            oreAgg.messages
+        )
+      })
+    } else {
+      mappingResults
+    }
 
     // Encode to Row-based structure
     val encodedMappingResults: DataFrame =
