@@ -64,7 +64,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     // @michael Any issues with making SparkSession implicit?
     implicit val spark: SparkSession = SparkSession.builder()
       .config(sparkConf)
-      .config("spark.ui.showConsoleProgress", value = false)
+      // .config("spark.ui.showConsoleProgress", value = false)
       .getOrCreate()
 
     // Need to keep this here despite what IntelliJ and Codacy say
