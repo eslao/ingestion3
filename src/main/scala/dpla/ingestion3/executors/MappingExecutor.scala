@@ -54,14 +54,12 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
 
     // This start time is used for documentation and output file naming.
     val startDateTime = LocalDateTime.now
-
     // This start time is used to measure the duration of mapping.
     val startTime = System.currentTimeMillis()
-
     val outputHelper: OutputHelper =
       new OutputHelper(dataOut, shortName, "mapping", startDateTime)
-
     val outputPath = outputHelper.activityPath
+    val enforceDuplidateIds = getExtractorClass(shortName).getMapping.enforceDuplicateIds
 
     // @michael Any issues with making SparkSession implicit?
     implicit val spark: SparkSession = SparkSession.builder()
@@ -80,11 +78,16 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     // Load the harvested record dataframe, repartition data
     val harvestedRecords: DataFrame = spark.read.avro(dataIn).repartition(1000)
 
-    // Get distinct harvest records
-    val distinctHarvest: DataFrame = harvestedRecords.distinct
+    val duplicateHarvest: Long = if(enforceDuplidateIds) {
+      // Get distinct harvest records
+      val distinctHarvest: DataFrame = harvestedRecords.distinct
 
-    // For reporting purposes, calculate number of duplicate harvest records
-    val duplicateHarvest: Long = harvestedRecords.count - distinctHarvest.count
+      // For reporting purposes, calculate number of duplicate harvest records
+      harvestedRecords.count - distinctHarvest.count
+    } else {
+      0
+    }
+
 
     // Run the mapping over the Dataframe
     // Transformation only
@@ -96,10 +99,6 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       .rdd
       .map(document => dplaMap.map(document, extractorClass))
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
-
-
-
-    val enforceDuplidateIds = getExtractorClass(shortName).getMapping.enforceDuplicateIds
 
     val updatedResults: RDD[OreAggregation] = if (enforceDuplidateIds) {
       // Get a list of originalIds that appear in more than one record
