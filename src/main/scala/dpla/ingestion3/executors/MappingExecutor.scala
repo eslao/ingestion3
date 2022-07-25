@@ -229,6 +229,8 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     val warnings: DataFrame = MessageProcessor.getWarnings(messages)
     val errors: DataFrame = MessageProcessor.getErrors(messages)
 
+    messages.unpersist()
+
     // These actions evaluate `messages', `warnings', and `errors'
     val warnCount: Long = warnings.count
     val errorCount: Long = errors.count
@@ -254,6 +256,9 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       MessageProcessor.getMessageFieldSummary(errors).mkString("\n")
     val warnMsgDetails: String =
       MessageProcessor.getMessageFieldSummary(warnings).mkString("\n")
+
+    warnings.unpersist()
+    errors.unpersist()
 
     // time summary
     val timeSummary = TimeSummary(
