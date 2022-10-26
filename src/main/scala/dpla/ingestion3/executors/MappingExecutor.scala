@@ -124,8 +124,6 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       mappingResults
     }
 
-    // Unpersist mapping results
-    mappingResults.unpersist()
 
     // Encode to Row-based structure
     val encodedMappingResults: DataFrame =
@@ -134,14 +132,20 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       )(oreAggregationEncoder)
         .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
+
+    // Unpersist mapping results
+    val tmpPath = "/tmp/tmpDf/"
+    encodedMappingResults.toDF().write.mode(SaveMode.Overwrite).avro(tmpPath)
+
+    val readEncodedMappingResults = spark.read.avro(tmpPath).repartition(500)
     // Must evaluate encodedMappingResults before successResults is called.
     // Otherwise spark will attempt to evaluate the filter transformation before the encoding transformation.
-     val totalCount = encodedMappingResults.cache().count()
+    val totalCount = 0 //  encodedMappingResults.cache().count()
 
     // Removes records from mappingResults that have at least one IngestMessage
     // with a level of IngestLogLevel.error
     // Transformation only
-    val successResults: DataFrame = encodedMappingResults
+    val successResults: DataFrame = readEncodedMappingResults
       .filter(oreAggRow => {
         !oreAggRow // not
           .getAs[mutable.WrappedArray[Row]]("messages") // get all messages
@@ -177,7 +181,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     // Collect the values needed to generate the report
     val finalReport =
     buildFinalReport(
-      encodedMappingResults,
+      readEncodedMappingResults,
       shortName,
       logsPath,
       startTime,
@@ -198,7 +202,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     spark.stop()
 
     // Unpersist encoded results
-    encodedMappingResults.unpersist()
+    readEncodedMappingResults.unpersist()
 
     // Return output destination of mapped records
     outputPath
