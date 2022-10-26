@@ -1,10 +1,8 @@
 package dpla.ingestion3.executors
 
-import java.time.LocalDateTime
-
 import com.databricks.spark.avro._
 import dpla.eleanor.Schemata.Ebook
-import dpla.eleanor.profiles.{EbookProfile, Profile}
+import dpla.eleanor.profiles.EbookProfile
 import dpla.ingestion3.dataStorage.OutputHelper
 import dpla.ingestion3.messages._
 import dpla.ingestion3.model
@@ -21,6 +19,7 @@ import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
 import org.apache.spark.storage.StorageLevel
 import org.json4s.JsonAST.JValue
 
+import java.time.LocalDateTime
 import scala.collection.mutable
 import scala.util.{Failure, Success}
 import scala.xml.NodeSeq
@@ -76,7 +75,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     val dplaMap = new DplaMap()
 
     // Load the harvested record dataframe, repartition data
-    val harvestedRecords: DataFrame = spark.read.avro(dataIn).repartition(1000)
+    val harvestedRecords: DataFrame = spark.read.avro(dataIn).repartition(10000)
 
     val duplicateHarvest: Long = if(enforceDuplidateIds) {
       // Get distinct harvest records
