@@ -132,7 +132,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
 
     // Must evaluate encodedMappingResults before successResults is called.
     // Otherwise spark will attempt to evaluate the filter transformation before the encoding transformation.
-    // val totalCount = encodedMappingResults.count
+     val totalCount = encodedMappingResults.cache().count()
 
     // Removes records from mappingResults that have at least one IngestMessage
     // with a level of IngestLogLevel.error
@@ -152,7 +152,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
 
     // Get counts
     val validRecordCount = spark.read.avro(outputPath).count // requires read-after-write consistency
-    val attemptedCount = 0
+    val attemptedCount = totalCount
 
     // Write manifest
     val manifestOpts: Map[String, String] = Map(
