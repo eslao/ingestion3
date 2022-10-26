@@ -58,7 +58,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     val outputHelper: OutputHelper =
       new OutputHelper(dataOut, shortName, "mapping", startDateTime)
     val outputPath = outputHelper.activityPath
-    val enforceDuplidateIds = getExtractorClass(shortName).getMapping.enforceDuplicateIds
+    val enforceDuplicateIds = getExtractorClass(shortName).getMapping.enforceDuplicateIds
 
     // @michael Any issues with making SparkSession implicit?
     implicit val spark: SparkSession = SparkSession.builder()
@@ -77,7 +77,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     // Load the harvested record dataframe, repartition data
     val harvestedRecords: DataFrame = spark.read.avro(dataIn).repartition(100)
 
-    val duplicateHarvest: Long = if(enforceDuplidateIds) {
+    val duplicateHarvest: Long = if(enforceDuplicateIds) {
       // Get distinct harvest records
       val distinctHarvest: DataFrame = harvestedRecords.distinct
 
@@ -87,6 +87,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       0
     }
 
+    harvestedRecords.unpersist()
 
     // Run the mapping over the Dataframe
     // Transformation only
@@ -99,7 +100,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       .map(document => dplaMap.map(document, extractorClass))
       .persist(StorageLevel.MEMORY_AND_DISK_SER)
 
-    val updatedResults: RDD[OreAggregation] = if (enforceDuplidateIds) {
+    val updatedResults: RDD[OreAggregation] = if (enforceDuplicateIds) {
       // Get a list of originalIds that appear in more than one record
       val duplicateOriginalIds: Broadcast[Array[String]] =
         spark.sparkContext.broadcast(
@@ -114,7 +115,7 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
       mappingResults.map(oreAgg => {
         oreAgg.copy(messages =
           if (duplicateOriginalIds.value.contains(oreAgg.originalId))
-            duplicateOriginalId(oreAgg.originalId, enforceDuplidateIds) +: oreAgg.messages // prepend is faster that append on seq
+            duplicateOriginalId(oreAgg.originalId, enforceDuplicateIds) +: oreAgg.messages // prepend is faster that append on seq
           else
             oreAgg.messages
         )
@@ -122,6 +123,9 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     } else {
       mappingResults
     }
+
+    // Unpersist mapping results
+    mappingResults.unpersist()
 
     // Encode to Row-based structure
     val encodedMappingResults: DataFrame =
@@ -192,6 +196,9 @@ trait MappingExecutor extends Serializable with IngestMessageTemplates {
     logger.info(mappingSummary)
 
     spark.stop()
+
+    // Unpersist encoded results
+    encodedMappingResults.unpersist()
 
     // Return output destination of mapped records
     outputPath
