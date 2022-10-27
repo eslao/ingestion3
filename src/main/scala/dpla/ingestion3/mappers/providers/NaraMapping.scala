@@ -82,10 +82,10 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     */
   override def edmRights(data: Document[NodeSeq]): ZeroToMany[URI] = {
     // There can be only one useRestriction
-    val useRestriction = extractString(data \\ "useRestriction" \ "status" \ "termName")
+    val useRestriction = extractString(data \ "useRestriction" \ "status" \ "termName")
     // There can be multiple specificUseRestrictions
     val specificRestrictions = for {
-      sra <- data \\ "useRestriction" \ "specificUseRestrictionArray" \ "specificUseRestriction"
+      sra <- data \ "useRestriction" \ "specificUseRestrictionArray" \ "specificUseRestriction"
       sr <- extractString(sra \ "termName")
     } yield Option(sr)
 
@@ -286,14 +286,14 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     //TODO: not handling multiple display values. haven't found example yet.
 
     val organizationalContributors = for {
-      org <- data \\ "organizationalContributorArray" \ "organizationalContributor"
+      org <- data \ "organizationalContributorArray" \ "organizationalContributor"
       name = (org \ "contributor" \ "termName").text
       _type = (org \ "contributorType" \ "termName").text
       if !_type.contains("Publisher")
     } yield name
 
     val personalContributors = for {
-      person <- data \\ "personalContributorArray" \ "personalContributor"
+      person <- data \ "personalContributorArray" \ "personalContributor"
       name = (person \ "contributor" \ "termName").text
       //_type = (person \ "contributorType" \ "TermName").text
     } yield name
@@ -305,14 +305,14 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     //TODO: not handling multiple display values. haven't found example yet.
     val organizationalCreators =
       for {
-        creatingOrganization <- data \\ "creatingOrganizationArray" \ "creatingOrganization"
+        creatingOrganization <- data \\"creatingOrganizationArray" \ "creatingOrganization"
         creator <- (creatingOrganization \ "creator" \ "termName").headOption.map(_.text)
         creatorType = (creatingOrganization \ "creatorType" \ "termName").headOption.map(_.text)
         if creatorType.getOrElse("").contains("Most Recent")
       } yield creator
 
     val individualCreators = for {
-      creator <- data \\ "creatingIndividualArray" \ "creatingIndividual" \ "creator" \ "termName"
+      creator <- data \ "creatingIndividualArray" \ "creatingIndividual" \ "creator" \ "termName"
     } yield creator.text
 
     if (organizationalCreators.nonEmpty)
