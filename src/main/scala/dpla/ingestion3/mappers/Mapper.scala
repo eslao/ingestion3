@@ -429,7 +429,7 @@ class XmlMapper extends Mapper[NodeSeq, XmlMapping] {
         intermediateProvider = mapping.intermediateProvider(document),
         isShownAt = validatedIsShownAt,
         `object` = validatedObject, // full size image
-        originalRecord = formatXml(document.get),
+        originalRecord = document.get, // TODO remove formatting for performance formatXml(document.get),
         preview = validatedPreview, // thumbnail
         provider = mapping.provider(document),
         sidecar = toJsonString(mapping.sidecar(document)),
