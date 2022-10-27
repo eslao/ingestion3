@@ -38,10 +38,10 @@ class NaraMapping extends XmlMapping with XmlExtractor {
   override def dataProvider(data: Document[NodeSeq]): ZeroToMany[EdmAgent] = {
     val referenceUnit = (for {
       physicalOccurrenceArray <- data \ "physicalOccurrenceArray"
-      copyStatus = (physicalOccurrenceArray \\ "copyStatus" \ "termName").text
+      copyStatus = (physicalOccurrenceArray \ "itemPhysicalOccurrence" \ "copyStatus" \ "termName").text
       //todo Preservation-Reproduction-Reference
       if copyStatus.contains("Reproduction-Reference") || copyStatus.contains("Preservation")
-      referenceUnit = (physicalOccurrenceArray \\ "referenceUnit" \ "termName").map(_.text).headOption
+      referenceUnit = (physicalOccurrenceArray \ "itemPhysicalOccurrence" \ "referenceUnitArray" \ "referenceUnit" \ "termName").map(_.text).headOption
     } yield referenceUnit).headOption.flatten
 
     Seq(nameOnlyAgent(referenceUnit.getOrElse("National Archives and Records Administration")))
@@ -203,7 +203,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     extractStrings("scopeAndContentNote")(data)
 
   override def extent(data: Document[NodeSeq]): ZeroToMany[String] =
-    extractStrings(data \ "physicalOccurrenceArray" \\ "extent")
+    extractStrings(data \ "physicalOccurrenceArray" \ "itemPhysicalOccurrence" \ "extent")
 
   override def format(data: Document[NodeSeq]): ZeroToMany[String] =
     extractFormat(data)
@@ -212,10 +212,10 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     extractStrings("naId")(data)
 
   override def language(data: Document[NodeSeq]): ZeroToMany[SkosConcept] =
-    extractStrings(data \\ "languageArray" \ "language" \ "termName").map(nameOnlyConcept)
+    extractStrings(data \ "languageArray" \ "language" \ "termName").map(nameOnlyConcept)
 
   override def place(data: Document[NodeSeq]): ZeroToMany[DplaPlace] =
-    extractStrings(data \\ "geographicReferenceArray" \ "geographicPlaceName" \ "termName").map(nameOnlyPlace)
+    extractStrings(data \ "geographicReferenceArray" \ "geographicPlaceName" \ "termName").map(nameOnlyPlace)
 
   override def publisher(data: Document[NodeSeq]): ZeroToMany[EdmAgent] =
     extractPublisher(data).map(nameOnlyAgent)
@@ -227,7 +227,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     extractRights(data)
 
   override def subject(data: Document[NodeSeq]): ZeroToMany[SkosConcept] =
-    (data \\ "topicalSubjectArray" \ "topicalSubject").map(node => {
+    (data \ "topicalSubjectArray" \ "topicalSubject").map(node => {
       val name = extractString(node \ "termName")
       val subjectUri = extractStrings(node \ "naId").map(uri)
       SkosConcept(concept = name, exactMatch = subjectUri)
@@ -248,29 +248,29 @@ class NaraMapping extends XmlMapping with XmlExtractor {
 
   private def extractCollection(data: NodeSeq): Seq[DcmiTypeCollection] = {
     val parentRecordGroupIds = for {
-      prg <- data \\ "parentRecordGroup" \\ "title"
-      prgUri <- extractString(data \\ "parentRecordGroup" \\ "naId")
+      prg <- data \ "parentSeries" \ "parentRecordGroup" \ "title"
+      prgUri <- extractString(data \ "parentSeries" \ "parentRecordGroup" \ "naId")
         .map(naId => s"$uriBase$naId")
         .map(stringOnlyWebResource)
     } yield DcmiTypeCollection(title = Option(prg.text), isShownAt = Some(prgUri))
 
     val parentCollectionIds = for {
-      pc <- data \\ "parentCollection" \ "title"
-      pcUri <- extractString(data \\ "parentCollection" \ "naId")
+      pc <- data \ "parentSeries" \ "parentCollection" \ "title"
+      pcUri <- extractString(data \ "parentSeries" \ "parentCollection" \ "naId")
         .map(naId => s"$uriBase$naId")
         .map(stringOnlyWebResource)
     } yield DcmiTypeCollection(title = Option(pc.text), isShownAt = Some(pcUri))
 
     val parentSeries = for {
-      ps <- data \\ "parentSeries" \ "title"
-      psUri <- extractString(data \\ "parentSeries" \ "naId")
+      ps <- data \ "parentSeries" \ "title"
+      psUri <- extractString(data \ "parentSeries" \ "naId")
         .map(naId => s"$uriBase$naId")
         .map(stringOnlyWebResource)
     } yield DcmiTypeCollection(title = Option(ps.text), isShownAt = Some(psUri))
 
     val parentFileUnit = for {
-      pfu <- data \\ "parentFileUnit" \ "title"
-      pfuUri <- extractString(data \\ "parentFileUnit" \ "naId")
+      pfu <- data \ "parentSeries" \ "parentFileUnit" \ "title"
+      pfuUri <- extractString(data \ "parentSeries" \ "parentFileUnit" \ "naId")
         .map(naId => s"$uriBase$naId")
         .map(stringOnlyWebResource)
     } yield DcmiTypeCollection(title = Option(pfu.text), isShownAt = Some(pfuUri))
@@ -312,7 +312,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
       } yield creator
 
     val individualCreators = for {
-      creator <- data \ "creatingIndividualArray" \ "creatingIndividual" \ "creator" \ "termName"
+      creator <- data \\ "creatingIndividualArray" \ "creatingIndividual" \ "creator" \ "termName"
     } yield creator.text
 
     if (organizationalCreators.nonEmpty)
@@ -371,11 +371,11 @@ class NaraMapping extends XmlMapping with XmlExtractor {
 
 
   private def extractFormat(data: NodeSeq): Seq[String] =
-    (extractStrings(data \\ "specificRecordsTypeArray" \\ "specificRecordsType" \ "termName") ++
-      extractStrings(data \\ "mediaOccurrenceArray" \\ "specificMediaType" \ "termName") ++
-      extractStrings(data \\ "mediaOccurrenceArray" \\ "color" \ "termName") ++
-      extractStrings(data \\ "mediaOccurrenceArray" \\ "dimensions" \ "termName") ++
-      extractStrings(data \\ "mediaOccurrenceArray" \\ "generalMediaType" \ "termName")).distinct
+    (extractStrings(data \ "specificRecordsTypeArray" \ "specificRecordsType" \ "termName") ++
+      extractStrings(data \ "physicalOccurrenceArray" \ "itemPhysicalOccurrence" \ "mediaOccurrenceArray" \ "itemMediaOccurrence" \ "specificMediaType" \ "termName") ++
+      extractStrings(data \ "physicalOccurrenceArray" \ "itemPhysicalOccurrence" \ "mediaOccurrenceArray" \ "itemMediaOccurrence" \ "color" \ "termName") ++
+      extractStrings(data \ "physicalOccurrenceArray" \ "itemPhysicalOccurrence" \ "mediaOccurrenceArray" \ "itemMediaOccurrence" \ "dimensions" \ "termName") ++
+      extractStrings(data \ "physicalOccurrenceArray" \ "itemPhysicalOccurrence" \ "mediaOccurrenceArray" \ "itemMediaOccurrence" \ "generalMediaType" \ "termName")).distinct
 
   /**
     * removes the time portion of an ISO-8601 datetime
@@ -449,13 +449,13 @@ class NaraMapping extends XmlMapping with XmlExtractor {
   private def extractPublisher(data: NodeSeq): Seq[String] = {
 
     val orgs = for {
-      org <- data \\ "organizationalContributorArray" \ "organizationalContributor"
+      org <- data \ "organizationalContributorArray" \ "organizationalContributor"
       if (org \ "contributorType" \ "termName").text == "Publisher"
       name <- org \ "termName"
     } yield name.text
 
     val persons = for {
-      person <- data \\ "personalContributorArray" \ "personalContributor"
+      person <- data \ "personalContributorArray" \ "personalContributor"
       if (person \ "contributorType" \ "termName").text == "Publisher"
       name <- person \ "termName"
     } yield name.text
@@ -466,7 +466,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
   private def extractRelation(data: NodeSeq): Seq[String] = {
 
     val parentFileUnitRelation = for {
-      parentFileUnit <- data \\ "parentFileUnit"
+      parentFileUnit <- data \ "parentSeries" \ "parentFileUnit"
       value1 = (parentFileUnit \ "title").text
       value2 = (parentFileUnit \ "parentSeries" \ "title").text
       value3a = (parentFileUnit \ "parentRecordGroup" \ "title").text
@@ -475,7 +475,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
     } yield Seq(value3, value2, value1).filter(_.nonEmpty).mkString(" ; ")
 
     val parentSeriesRelation = for {
-      parentSeries <- data \\ "parentSeries"
+      parentSeries <- data \ "parentSeries"
       value2 = (parentSeries \ "title").text
       value3a = (parentSeries \ "parentRecordGroup" \ "title").text
       value3b = (parentSeries \ "parentCollection" \ "title").text
@@ -502,7 +502,7 @@ class NaraMapping extends XmlMapping with XmlExtractor {
 
 
   private def extractTypes(data: NodeSeq): Seq[String] = for {
-    stringType <- extractStrings(data \\ "generalRecordsTypeArray" \ "generalRecordsType" \ "termName")
+    stringType <- extractStrings(data \ "generalRecordsTypeArray" \ "generalRecordsType" \ "termName")
     mappedType <- NaraTypeVocabEnforcer.mapNaraType(stringType)
   } yield {
     mappedType
