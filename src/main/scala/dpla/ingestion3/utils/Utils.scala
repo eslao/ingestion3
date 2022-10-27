@@ -20,6 +20,8 @@ import scala.xml.NodeSeq
 
 object Utils {
 
+  lazy val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
+
   /**
     * Count the number of files in the given directory, outDir.
     *
@@ -115,8 +117,7 @@ object Utils {
     * @return Formatted String representation of the node
     */
   def formatXml(xml: NodeSeq): String = {
-    val prettyPrinter = new scala.xml.PrettyPrinter(80, 2)
-    prettyPrinter.format(xml.head).toString
+    prettyPrinter.format(xml.head)
   }
 
   /**

@@ -2,7 +2,6 @@ package dpla.ingestion3.model
 
 import dpla.ingestion3.messages.IngestMessage
 import dpla.ingestion3.model.DplaMapData._
-import org.json4s.{JNothing, JValue}
 
 import scala.util.Try
 
@@ -156,7 +155,7 @@ case class URI(value: String) {
     */
   override def toString: String = value
 
-  val validEdmRightsValues: Set[String] = Set(
+  lazy val validEdmRightsValues: Seq[String] = Seq(
     "http://rightsstatements.org/vocab/CNE/1.0/",
     "http://rightsstatements.org/vocab/InC-EDU/1.0/",
     "http://rightsstatements.org/vocab/InC-NC/1.0/",
