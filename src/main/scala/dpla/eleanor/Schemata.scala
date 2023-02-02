@@ -28,6 +28,7 @@ object Schemata {
     object Feedbooks extends SourceUri("http://feedbooks.com")
     object Gutenberg extends SourceUri("http://gutenberg.org")
     object Gpo extends SourceUri("http://gpo.gov")
+    object Fulcrum extends SourceUri("http://www.fulcrum.org")
   }
 
   sealed case class MetadataType(metadataType: String) {
