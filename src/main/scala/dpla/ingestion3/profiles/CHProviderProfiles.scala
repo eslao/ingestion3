@@ -207,7 +207,8 @@ class MeProfile extends JsonProfile {
 class MaProfile extends XmlProfile {
   type Mapping = MaMapping
 
-  override def getHarvester: Class[_ <: Harvester] = classOf[OaiHarvester]
+//  override def getHarvester: Class[_ <: Harvester] = classOf[OaiHarvester]
+  override def getHarvester: Class[_ <: Harvester] = classOf[OaiFileHarvester]
   override def getMapping = new MaMapping
 }
 
