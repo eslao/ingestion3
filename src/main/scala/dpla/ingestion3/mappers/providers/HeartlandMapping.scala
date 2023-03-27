@@ -11,14 +11,14 @@ import org.json4s.JsonDSL._
 import org.json4s._
 
 
-class MissouriMapping extends JsonMapping with JsonExtractor with IngestMessageTemplates {
+class HeartlandMapping extends JsonMapping with JsonExtractor with IngestMessageTemplates {
 
   val formatBlockList: Set[String] = ExtentIdentificationList.termList
 
   // ID minting functions
   override def useProviderName: Boolean = false // Missouri provides ids with the provider name already prepended
 
-  override def getProviderName: Option[String] = Some("missouri")
+  override def getProviderName: Option[String] = Some("heartland")
 
   override def originalId(implicit data: Document[JValue]): ZeroToOne[String] =
     extractString(unwrap(data) \ "@id")
@@ -93,8 +93,8 @@ class MissouriMapping extends JsonMapping with JsonExtractor with IngestMessageT
     extractStrings(unwrap(data) \ "sourceResource" \ "type")
 
   def agent = EdmAgent(
-    name = Some("Missouri Hub"),
-    uri = Some(URI("http://dp.la/api/contributor/missouri-hub"))
+    name = Some("Heartland Hub"),
+    uri = Some(URI("http://dp.la/api/contributor/heartland-hub"))
   )
 
   def extractDate(date: JValue): ZeroToMany[EdmTimeSpan] = {

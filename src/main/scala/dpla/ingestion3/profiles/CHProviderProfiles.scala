@@ -246,20 +246,20 @@ class MiProfile extends XmlProfile {
   * Mississippi Hub
   */
 class MississippiProfile extends JsonProfile {
-  type Mapping = MissouriMapping // FIXME
+  type Mapping = HeartlandMapping // FIXME
 
   override def getHarvester: Class[_ <: Harvester] = classOf[MississippiHarvester]
-  override def getMapping = new MissouriMapping // FIXME
+  override def getMapping = new HeartlandMapping // FIXME
 }
 
 /**
-  * Missouri Hub
+  * Heartland Hub (formerly Missouri Hub)
   */
 class MissouriProfile extends JsonProfile {
-  type Mapping = MissouriMapping
+  type Mapping = HeartlandMapping
 
   override def getHarvester: Class[_ <: Harvester] = classOf[MissouriFileHarvester]
-  override def getMapping = new MissouriMapping
+  override def getMapping = new HeartlandMapping
 }
 
 /**
