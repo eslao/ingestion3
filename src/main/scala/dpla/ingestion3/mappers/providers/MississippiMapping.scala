@@ -16,7 +16,7 @@ class MississippiMapping extends JsonMapping with JsonExtractor with IngestMessa
   // ID minting functions
   override def useProviderName: Boolean = true
 
-  override def getProviderName: String = "mississippi"
+  override def getProviderName: Option[String] = Some("mississippi")
 
   // TODO confirm this is the most stable identifier for these records
   override def originalId(implicit data: Document[JValue]): ZeroToOne[String] =
