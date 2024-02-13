@@ -22,7 +22,7 @@ class MississippiMappingTest extends FlatSpec with BeforeAndAfter {
   }
 
   it should "return the correct provider name" in {
-    assert(extractor.getProviderName === "mississippi")
+    assert(extractor.getProviderName === Some("mississippi"))
   }
 
   it should "extract the correct original ID" in {
