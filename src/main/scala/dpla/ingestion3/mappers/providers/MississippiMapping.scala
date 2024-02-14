@@ -23,6 +23,7 @@ class MississippiMapping extends JsonMapping with JsonExtractor with IngestMessa
     extractString(unwrap(data) \ "@id")
 
   // OreAggregation
+  // TODO we need a code -> label lookup for these values to be provided by the hub
   //  override def dataProvider(data: Document[JValue]): ZeroToMany[EdmAgent] =
   //    extractStrings(unwrap(data) \ "dataProvider").map(nameOnlyAgent)
 
@@ -90,7 +91,7 @@ class MississippiMapping extends JsonMapping with JsonExtractor with IngestMessa
     extractStrings(unwrap(data) \ "pnx" \ "display" \ "type")
 
   def agent = EdmAgent(
-    name = Some("Mississippi Digital Library"), // TODO Confirm hub name
+    name = Some("Mississippi Digital Library"),
     uri = Some(URI("http://dp.la/api/contributor/mississippi-digital-library"))
   )
 }
